@@ -58,7 +58,7 @@ router.post("/verify_otp", uploadFiles.none(), verifyOtp);
 router.get("/edit_profile", uploadFiles.single("avatar"), editProfile);
 
 //    change password
-router.get("/change_password", uploadFiles.none(), changePassword);
+router.post("/change_password", uploadFiles.none(), changePassword);
 
 //    check ip
 router.get("/checkIp", uploadFiles.none(), checkIp);

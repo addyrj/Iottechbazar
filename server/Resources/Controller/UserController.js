@@ -336,62 +336,174 @@ const socialLogin = async (req, res) => {
     }
 }
 
-const sendLoginOtp = async (req, res, next) => {
+// const sendLoginOtp = async (req, res, next) => {
+//     try {
+//         const { Contact } = req.body;
+//         const Otp = "123456";
+//         if (isEmpty(Contact)) {
+//             return res.status(300).json({
+//                 status: 300,
+//                 message: "Failed! Contact number is not exist"
+//             })
+//         } else if (Contact.length !== 10) {
+//             return res.status(300).json({
+//                 status: 300,
+//                 message: "Failed! Contact number is not valid"
+//             })
+//         } else {
+//             // https://2factor.in/API/V1/a94f102f-82db-11ea-9fa5-0200cd936042/SMS/' . $contact . '/' . $otp . '/RANKTOP
+
+//             // const sendOtpUrl = `${process.env.TWO_FACTOR_API_URL}/${process.env.TWO_FACTOR_API_KEY}/SMS/${Contact}/${Otp}/${process.env.TWO_FACTOR_API_BASE_KEY}`;
+//             const sendOtpUrl = "https://2factor.in/API/V1/a94f102f-82db-11ea-9fa5-0200cd936042/SMS/7070532135/123456/RANKTOP"
+
+//             await axios.get(sendOtpUrl)
+//                 .then((result) => {
+//                     return res.status(200).json({
+//                         status: 200,
+//                         message: "Otp Sent successfully",
+//                         info: result
+//                     })
+//                 })
+//                 .catch((error) => {
+//                     return res.status(300).json({
+//                         status: 300,
+//                         message: "Failed! Otp Sent Failed",
+//                         info: error
+//                     })
+//                 })
+//         }
+//     } catch (error) {
+//         return res.status(500).json({
+//             status: 500,
+//             error: true,
+//             message: error.message || error
+//         })
+//     }
+// }
+
+// const verifyLoginOtp = async (req, res, next) => {
+//     try {
+//         const { Contact, Otp } = req.body;
+
+//         // 1️⃣ Validate input
+//         if (!Contact || !Otp) {
+//             return res.status(422).json({
+//                 status: 422,
+//                 message: "Contact and OTP are required"
+//             });
+//         }
+
+//         // 2️⃣ Find user by contact
+//         const checkUser = await User.findOne({ where: { contact: Contact } });
+//         if (!checkUser) {
+//             return res.status(404).json({
+//                 status: 404,
+//                 message: "User does not exist"
+//             });
+//         }
+
+//         // 3️⃣ Check if OTP matches
+//         const isMatcher = Otp.toString() === checkUser.otp.toString();
+//         if (!isMatcher) {
+//             return res.status(400).json({
+//                 status: 400,
+//                 message: "OTP does not match"
+//             });
+//         }
+
+//         // 4️⃣ Update OTP status
+//         const [updated] = await User.update(
+//             { otp_status: "true", otp: null },
+//             { where: { userId: checkUser.userId } }
+//         );
+
+//         if (updated > 0) {
+//             return res.status(200).json({
+//                 status: 200,
+//                 message: "OTP verification successful",
+//                 data: {
+//                     userId: checkUser.userId,
+//                     name: checkUser.name,
+//                     email: checkUser.email,
+//                     contact: checkUser.contact
+//                 }
+//             });
+//         } else {
+//             return res.status(500).json({
+//                 status: 500,
+//                 message: "Failed to update OTP status"
+//             });
+//         }
+
+//     } catch (error) {
+//         return res.status(500).json({
+//             status: 500,
+//             error: true,
+//             message: error.message || error
+//         });
+//     }
+// };
+const sendLoginOtp = async (req, res) => {
     try {
         const { Contact } = req.body;
-        const Otp = "123456";
-        if (isEmpty(Contact)) {
-            return res.status(300).json({
-                status: 300,
-                message: "Failed! Contact number is not exist"
-            })
-        } else if (Contact.length !== 10) {
-            return res.status(300).json({
-                status: 300,
-                message: "Failed! Contact number is not valid"
-            })
-        } else {
-            // https://2factor.in/API/V1/a94f102f-82db-11ea-9fa5-0200cd936042/SMS/' . $contact . '/' . $otp . '/RANKTOP
 
-            // const sendOtpUrl = `${process.env.TWO_FACTOR_API_URL}/${process.env.TWO_FACTOR_API_KEY}/SMS/${Contact}/${Otp}/${process.env.TWO_FACTOR_API_BASE_KEY}`;
-            const sendOtpUrl = "https://2factor.in/API/V1/a94f102f-82db-11ea-9fa5-0200cd936042/SMS/7070532135/123456/RANKTOP"
-
-            await axios.get(sendOtpUrl)
-                .then((result) => {
-                    return res.status(200).json({
-                        status: 200,
-                        message: "Otp Sent successfully",
-                        info: result
-                    })
-                })
-                .catch((error) => {
-                    return res.status(300).json({
-                        status: 300,
-                        message: "Failed! Otp Sent Failed",
-                        info: error
-                    })
-                })
+        if (!Contact || Contact.length !== 10) {
+            return res.status(422).json({ status: 422, message: "Valid contact number is required" });
         }
-    } catch (error) {
-        return res.status(500).json({
-            status: 500,
-            error: true,
-            message: error.message || error
-        })
-    }
-}
 
-const verifyLoginOtp = async (req, res, next) => {
-    try {
-        const { Contact, Otp } = req.body;
+        // Generate random OTP
+        const Otp = Math.floor(100000 + Math.random() * 900000);
+
+        // Send via 2factor SMS API
+        const sendOtpUrl = `https://2factor.in/API/V1/a94f102f-82db-11ea-9fa5-0200cd936042/SMS/${Contact}/${Otp}/RANKTOP`;
+        const result = await axios.get(sendOtpUrl);
+
+        // Return OTP in response (frontend can store in hidden input)
+        return res.status(200).json({
+            status: 200,
+            message: "OTP sent successfully",
+            otp: Otp, // temporary storage for frontend or testing
+            info: result.data
+        });
+
     } catch (error) {
-        return res.status(500).json({
-            status: 500,
-            error: true,
-            message: error.message || error
-        })
+        return res.status(500).json({ status: 500, error: true, message: error.message || error });
     }
-}
+};
+const verifyLoginOtp = async (req, res) => {
+    try {
+        const { Contact, Otp, tempOtp } = req.body; // tempOtp = OTP stored in hidden input
+
+        if (!Contact || !Otp || !tempOtp) {
+            return res.status(422).json({ status: 422, message: "Contact, OTP, and tempOtp are required" });
+        }
+
+        if (Otp.toString() !== tempOtp.toString()) {
+            return res.status(400).json({ status: 400, message: "OTP does not match" });
+        }
+
+        // Find user to return profile
+        const checkUser = await USER.findOne({ where: { contact: Contact } });
+        if (!checkUser) {
+            return res.status(404).json({ status: 404, message: "User does not exist" });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            message: "OTP verification successful",
+            data: {
+                userId: checkUser.userId,
+                name: checkUser.name,
+                email: checkUser.email,
+                contact: checkUser.contact
+            }
+        });
+
+    } catch (error) {
+        return res.status(500).json({ status: 500, error: true, message: error.message || error });
+    }
+};
+
 
 const getCustomer = async (req, res, next) => {
     try {
